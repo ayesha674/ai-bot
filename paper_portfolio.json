@@ -1,0 +1,107 @@
+{
+    "usdt_balance": 2471.7231273530915,
+    "btc_balance": 0.0001258388733897343,
+    "buy_price": 79466.7,
+    "in_position": true,
+    "trade_history": [
+        {
+            "Time": "2026-08-28 19:53:42",
+            "Type": "BUY",
+            "Symbol": "BTC/USDT",
+            "Price": "$79466.7",
+            "Amount": 0.000126,
+            "PnL": "-",
+            "PnL_Raw": 0.0
+        },
+        {
+            "Time": "2026-08-28 19:46:25",
+            "Type": "SELL",
+            "Symbol": "BTC/USDT",
+            "Price": "$79326.3",
+            "Amount": 0.000126,
+            "PnL": "$-0.01",
+            "PnL_Raw": -0.011798035759253978
+        },
+        {
+            "Time": "2026-08-28 19:44:40",
+            "Type": "BUY",
+            "Symbol": "BTC/USDT",
+            "Price": "$79420.0",
+            "Amount": 0.000126,
+            "PnL": "-",
+            "PnL_Raw": 0.0
+        },
+        {
+            "Time": "2026-08-28 19:43:43",
+            "Type": "SELL",
+            "Symbol": "BTC/USDT",
+            "Price": "$79333.9",
+            "Amount": 0.000629,
+            "PnL": "$-0.09",
+            "PnL_Raw": -0.08877005347594036
+        },
+        {
+            "Time": "2026-08-28 19:37:24",
+            "Type": "BUY",
+            "Symbol": "BTC/USDT",
+            "Price": "$79475.0",
+            "Amount": 0.000629,
+            "PnL": "-",
+            "PnL_Raw": 0.0
+        },
+        {
+            "Time": "2026-08-27 11:09:57",
+            "Type": "SELL",
+            "Symbol": "BTC/USDT",
+            "Price": "$78816.01",
+            "Amount": 0.02005,
+            "PnL": "$1530.26",
+            "PnL_Raw": 1530.2645402925702
+        },
+        {
+            "Time": "2026-08-27 11:04:39",
+            "Type": "BUY",
+            "Symbol": "ETH/USDT",
+            "Price": "$2493.76",
+            "Amount": 0.02005,
+            "PnL": "-",
+            "PnL_Raw": 0.0
+        },
+        {
+            "Time": "2026-08-27 11:04:02",
+            "Type": "SELL",
+            "Symbol": "ETH/USDT",
+            "Price": "$2493.76",
+            "Amount": 0.000632,
+            "PnL": "$-48.42",
+            "PnL_Raw": -48.424066703656855
+        },
+        {
+            "Time": "2026-08-26 10:44:41",
+            "Type": "BUY",
+            "Symbol": "BTC/USDT",
+            "Price": "$79120.1",
+            "Amount": 0.000632,
+            "PnL": "-",
+            "PnL_Raw": 0.0
+        },
+        {
+            "Time": "2026-08-25 22:57:46",
+            "Type": "SELL",
+            "Symbol": "BTC/USDT",
+            "Price": "$79213.39",
+            "Amount": 0.000631,
+            "PnL": "$-0.02",
+            "PnL_Raw": -0.016778146587114406
+        },
+        {
+            "Time": "2026-08-25 22:56:02",
+            "Type": "BUY",
+            "Symbol": "BTC/USDT",
+            "Price": "$79239.98",
+            "Amount": 0.000631,
+            "PnL": "-",
+            "PnL_Raw": 0.0
+        }
+    ]
+}
