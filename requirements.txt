@@ -1,4 +1,7 @@
-ccxt
+streamlit
 pandas
-python-dotenv
+plotly
+ccxt
 requests
+python-dotenv
+numpy
