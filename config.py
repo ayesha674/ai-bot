@@ -4,23 +4,24 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ==========================================
-# TRADING BOT CONFIGURATION (ULTRA-SAFE)
+# TRADING BOT CONFIGURATION (DEMO HIGH CAPITAL)
 # ==========================================
 
-# True = Demo Trading (No Real Money Used)
-# False = Real Trading
-PAPER_TRADING = True
+PAPER_TRADING = True         # Demo / Paper Trading active
 
-# Trade Sizing (Wallet Protection)
-MAX_TRADE_AMOUNT = 10  # Maximum $10 USDT per trade
+# 1. Total Portfolio Balance (Demo Capital)
+#1. Total Portfolio Balance (Variable Name Fixed)
+INITIAL_PAPER_BALANCE = 5000       # $5,000 Virtual Balance  # $5,000 Virtual Balance se start karega
 
-# Strict Risk Management (1:2.3 Risk-to-Reward Ratio)
-STOP_LOSS_PERCENT = 1.5      # Strictly 1.5% Stop Loss (Chota Loss)
-TAKE_PROFIT_PERCENT = 3.5    # 3.5% Take Profit (Bada Profit)
+# 2. Per Trade Sizing (Thousands mein trade)
+MAX_TRADE_AMOUNT = 3500     # Har trade $1,000 USDT ki lagegi
 
-# Strict Indicator Thresholds
-RSI_BUY_THRESHOLD = 35       # Sirf jab market oversold ho tab buy karein
-RSI_SELL_THRESHOLD = 68      # Sudden dump se pehle sell karein
+# 3. Risk Management (Tight Stop Loss, High Reward)
+STOP_LOSS_PERCENT = 0.8      # Chota Stop Loss (0.8%)
+TAKE_PROFIT_PERCENT = 3.5    # Bada Profit Target (3.5%)
 
-# Exchange Setup (Default: KuCoin)
+# Technical Thresholds
+RSI_BUY_THRESHOLD = 35
+RSI_SELL_THRESHOLD = 68
+
 EXCHANGE_NAME = "kucoin"
