@@ -1,93 +1,127 @@
-import json
 import os
-from datetime import datetime
+import ccxt
+import json
+from dotenv import load_dotenv
 import config
 
-DATA_FILE = "paper_portfolio.json"
+load_dotenv()
 
-def load_portfolio():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r") as f:
-            return json.load(f)
-    return {
-        "usdt_balance": config.INITIAL_PAPER_BALANCE,
-        "btc_balance": 0.0,
-        "buy_price": 0.0,
-        "in_position": False,
-        "trade_history": []
-    }
-
-def save_portfolio(data):
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=4)
-
-def calculate_pnl_stats(history):
-    total_pnl = 0.0
-    wins = 0
-    losses = 0
-    
-    for trade in history:
-        if trade.get("Type") == "SELL":
-            pnl_val = float(trade.get("PnL_Raw", 0.0))
-            total_pnl += pnl_val
-            if pnl_val > 0:
-                wins += 1
-            elif pnl_val < 0:
-                losses += 1
-
-    total_closed = wins + losses
-    win_rate = round((wins / total_closed) * 100, 1) if total_closed > 0 else 0.0
-    return round(total_pnl, 2), wins, losses, win_rate
-
-def execute_trade(signal, current_price, symbol="BTC/USDT"):
-    portfolio = load_portfolio()
-    if "trade_history" not in portfolio:
-        portfolio["trade_history"] = []
-        
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    # Stop Loss / Take Profit Check
-    if portfolio["in_position"]:
-        buy_price = portfolio["buy_price"]
-        price_change_pct = ((current_price - buy_price) / buy_price) * 100
-        
-        if price_change_pct <= -config.STOP_LOSS_PERCENT:
-            signal = "SELL"
-        elif price_change_pct >= config.TAKE_PROFIT_PERCENT:
-            signal = "SELL"
-
-    # BUY Execution
-    if signal == "BUY" and not portfolio["in_position"]:
-        amount_to_spend = min(config.MAX_TRADE_AMOUNT, portfolio["usdt_balance"])
-        if amount_to_spend >= 10:
-            btc_bought = amount_to_spend / current_price
-            portfolio["usdt_balance"] -= amount_to_spend
-            portfolio["btc_balance"] += btc_bought
-            portfolio["buy_price"] = current_price
-            portfolio["in_position"] = True
-            
-            portfolio["trade_history"].insert(0, {
-                "Time": now, "Type": "BUY", "Symbol": symbol, 
-                "Price": f"${current_price}", "Amount": round(btc_bought, 6), "PnL": "-", "PnL_Raw": 0.0
-            })
-            save_portfolio(portfolio)
-
-    # SELL Execution
-    elif signal == "SELL" and portfolio["in_position"]:
-        usdt_received = portfolio["btc_balance"] * current_price
-        profit_loss = usdt_received - (portfolio["btc_balance"] * portfolio["buy_price"])
-        
-        portfolio["usdt_balance"] += usdt_received
-        
-        portfolio["trade_history"].insert(0, {
-            "Time": now, "Type": "SELL", "Symbol": symbol, 
-            "Price": f"${current_price}", "Amount": round(portfolio["btc_balance"], 6), 
-            "PnL": f"${round(profit_loss, 2)}", "PnL_Raw": profit_loss
+class KuCoinTrader:
+    def __init__(self):
+        # 1. Exchange Setup with Rate Limit & Timeout Fixes
+        self.exchange = ccxt.kucoin({
+            'apiKey': os.getenv('KUCOIN_API_KEY', ''),
+            'secret': os.getenv('KUCOIN_SECRET', ''),
+            'password': os.getenv('KUCOIN_PASSPHRASE', ''),
+            'enableRateLimit': True,
+            'timeout': 30000,
         })
         
-        portfolio["btc_balance"] = 0.0
-        portfolio["buy_price"] = 0.0
-        portfolio["in_position"] = False
-        save_portfolio(portfolio)
+        self.paper_trading = getattr(config, 'PAPER_TRADING', True)
+        self.portfolio_file = 'paper_portfolio.json'
+        self.portfolio = self.load_portfolio()
 
-    return portfolio
+    def load_portfolio(self):
+        """Load paper portfolio or create a fresh one if missing"""
+        if os.path.exists(self.portfolio_file):
+            try:
+                with open(self.portfolio_file, 'r') as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        
+        # Fresh Default State ($5000 USDT)
+        initial_balance = getattr(config, 'INITIAL_PAPER_BALANCE', 5000)
+        return {
+            "usdt_balance": initial_balance,
+            "btc_balance": 0.0,
+            "in_position": False,
+            "buy_price": 0.0,
+            "trade_history": []
+        }
+
+    def save_portfolio(self):
+        """Save paper portfolio state"""
+        with open(self.portfolio_file, 'w') as f:
+            json.dump(self.portfolio, f, indent=4)
+
+    def fetch_current_price(self, symbol="BTC/USDT"):
+        """Fetch single pair ticker safely"""
+        try:
+            ticker = self.exchange.fetch_ticker(symbol)
+            return ticker['last']
+        except Exception as e:
+            print(f"Error fetching ticker for {symbol}: {e}")
+            return None
+
+    def execute_paper_trade(self, action, current_price, symbol="BTC/USDT"):
+        """Execute buy/sell trade and update portfolio state"""
+        action = str(action).upper()
+        max_amount = getattr(config, 'MAX_TRADE_AMOUNT', 1000)
+        
+        if action == "BUY" and not self.portfolio.get("in_position", False):
+            if self.portfolio["usdt_balance"] >= max_amount:
+                crypto_bought = max_amount / current_price
+                self.portfolio["usdt_balance"] -= max_amount
+                self.portfolio["btc_balance"] += crypto_bought
+                self.portfolio["in_position"] = True
+                self.portfolio["buy_price"] = current_price
+                
+                self.portfolio["trade_history"].append({
+                    "Type": "BUY",
+                    "Symbol": symbol,
+                    "Price": f"${current_price}",
+                    "Amount": f"${max_amount}",
+                    "PnL_Raw": 0.0
+                })
+                self.save_portfolio()
+                
+        elif action == "SELL" and self.portfolio.get("in_position", False):
+            crypto_qty = self.portfolio["btc_balance"]
+            sell_value = crypto_qty * current_price
+            cost_basis = crypto_qty * self.portfolio["buy_price"]
+            pnl = sell_value - cost_basis
+            
+            self.portfolio["usdt_balance"] += sell_value
+            self.portfolio["btc_balance"] = 0.0
+            self.portfolio["in_position"] = False
+            
+            self.portfolio["trade_history"].append({
+                "Type": "SELL",
+                "Symbol": symbol,
+                "Price": f"${current_price}",
+                "Amount": f"${round(sell_value, 2)}",
+                "PnL": f"${round(pnl, 2)}",
+                "PnL_Raw": pnl
+            })
+            self.portfolio["buy_price"] = 0.0
+            self.save_portfolio()
+            
+        return self.portfolio
+
+# =========================================================
+# DASHBOARD EXPORTED FUNCTIONS
+# =========================================================
+_trader_instance = KuCoinTrader()
+
+def execute_trade(action, price=None, symbol="BTC/USDT"):
+    """Matches dashboard signature: execute_trade(action, price, symbol=...)"""
+    if price is None or price <= 0:
+        price = _trader_instance.fetch_current_price(symbol) or 0.0
+        
+    return _trader_instance.execute_paper_trade(action, price, symbol)
+
+def calculate_pnl_stats(history=None):
+    """Matches dashboard signature: returns total_pnl, wins, losses, win_rate"""
+    if history is None:
+        history = _trader_instance.portfolio.get("trade_history", [])
+        
+    pnl_list = [item.get("PnL_Raw", 0.0) for item in history if "PnL_Raw" in item and item.get("Type") == "SELL"]
+    
+    total_pnl = round(sum(pnl_list), 2)
+    wins = len([p for p in pnl_list if p > 0])
+    losses = len([p for p in pnl_list if p < 0])
+    total_trades = wins + losses
+    win_rate = round((wins / total_trades * 100), 1) if total_trades > 0 else 0.0
+    
+    return total_pnl, wins, losses, win_rate
